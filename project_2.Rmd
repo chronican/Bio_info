@@ -1,0 +1,187 @@
+---
+title: "crab"
+author: "Xiaoqi Ma"
+date: "2020/4/30"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+\section{1.Introduction}
+The natural phenomenon about horseshoe crab fertilization described by Brockmann attracts researchers'attention.The male crabs are composed of the attached and the unattached.Each female crab had a male crab attached to her in her nest.However,some female crabs have unattached male crabs as satellites around her to compete with attached male for fertilization and others have not. In our study,we need to investigate factors that affect whether the female crab had any other satellite males residing nearby her.
+According to the dataset of horseshoe crab,there are 173 samples on 7 columns.Each row of dataset means a female horseshoe crab and columns represent biological characteristics of female horseshoes.The seven columns are as following:
+\begin{itemize}
+\item sequnence: number of female horseshoe crab.
+\item weight:the weight of the female horseshoe crab,which measured in grams.
+\item width:carapace width of female horseshoe crab in centimeters.
+\item color:ordinal value range from 1 to 4,which represent light medium,medium,dark medium and dark respectively.
+\item spine:ordinal value range from 1 to 3,wchich stands for spine condition.The conditions given in Agresti are “both good”, “one worn or broken”, and “both worn or broken”. 
+\item sat:number of satellites, which means the number of males clustering around the female in addition to the male with which she is breeding.
+\item y:shorthand for the number of satellites.It is 1 if sat > 0.
+\end{itemize}
+
+Considering removing irrelevant variables,we finally retain 4 variables:weight,width,color and spine and labels:y.Then,we try to predict the probability that female horseshoe crab has satellites with logistic regression thus explore the most significant factors which affect the satellite condition of female crabs.
+
+\section{2.Exploratory Data Analysis}
+Firstly,we need to explore the relationshop between each of variable and label independently.For There are two kinds of variables in our study.
+
+\begin{itemize}
+\item categorical variables:color and spine. The boxplot which form two groups based on value of y show the frequency of distribution about color and spine.From the plot,the female horseshoe crab which has the medium color and spine condition of worn and broken has the largest probability of having satellite males. 
+\item continuous variables:weight and width.The density plot show the ditribution of the numeric variable and we classify the variable into two groups based on the value of y,so we can compare the density distribution of two groups.According to the mean value of each group,on average,we can observe the female horseshoe crab which has satellites have bigger weight and width than those don't have.
+\end{itemize}
+
+
+
+
+Secondly,we try to investigate the relationship between variables.In Figure 2,we show the scatter plots and corrlation coefficients for each pair of variables.
+
+The correlation matrix indicates a strong correlation between weight and width with correlation coefficient is 0.89.In addition,the histograms show the distribution of variables in dataset.The value of weight mainly exists in 2~3(kg) and the value of width  mainly certered at interval from 22(cm) to 30(cm).As for the categorical variables,the number of medium color (value equals 2) is the most and most female horseshoe crabs has the spine condition of both worn and broken(value equals 3)
+\section{3.Baseline model}
+Logistic regression is our first choice to do this binary classification task.The model takes the explatanory variables xk as input and predict the probability as output.The logit transformation guarantee the value of p staying the interval[0,1].The coefficient of xk represents the log-odds of variable xk.The logistic regression model is fitted by maximum (log)likelihood,specifically,which means minimizes the cross entropy loss in our model.
+$$
+\text{logit}(p(\boldsymbol{x}; \boldsymbol{\beta})) = \ln\left(\frac{p(\boldsymbol{x}; \boldsymbol{\beta})}{1-p(\boldsymbol{x}; \boldsymbol{\beta})}\right) = \beta_0 + \beta_1 x_1 + \cdots + \beta_m x_m   = \boldsymbol{\beta}^\top\boldsymbol{x}
+$$
+$$
+p(\boldsymbol{x}; \boldsymbol{\beta}) = \frac{\exp(\boldsymbol{\beta}^\top\boldsymbol{x})}{1 + \exp(\boldsymbol{\beta}^\top\boldsymbol{x})}
+$$
+
+The basic model we firstly fitted is combined with all variables in the dataset and considering the categorical values of spine and color,we transform them into factors:
+$$
+\text{logit}(p(\boldsymbol{x}; \boldsymbol{\beta})) = \ln\left(\frac{p(\boldsymbol{x}; \boldsymbol{\beta})}{1-p(\boldsymbol{x}; \boldsymbol{\beta})}\right) = \beta_0 + \beta_1 x_1 +\beta_1 x_2+\vec \beta_3 \vec x_3+\vec \beta_4 \vec x_4
+$$
+where $x1-x2$ indicate weight,widt and x3,x4 represent the categorical vectors after factor operation and p0-p0 indicate the corresponding coefficients.
+After minimizing the cross-entropy loss of parameters,we get the summary of the model:
+
+\begin{table}[]
+\begin{tabular}{ccccccc}
+& Estimate& Std. Error&z value&  Pr(>|z|)& Confidence Interval\\ \hline
+ (Intercept)& 1.724e+02 & 6.841e+01 &2.519 & 0.0192 &\\ 
+width &  & 2.849e-01 & -0.152&   0.8803   &     \\
+weight & -6.518e-02 & 6.383e-01 & -0.102 & 0.9195 &   \\
+color2& -1.111e+00 & 4.762e+00 & -0.233 & 0.8176 & \\
+color3& -6.567e-05  & 8.881e-04 & -0.074 & 0.9417  & \\
+color4& -6.567e-05  & 8.881e-04 & -0.074 & 0.9417  & \\
+spine2& -6.567e-05  & 8.881e-04 & -0.074 & 0.9417  & \\
+spine3& -6.567e-05  & 8.881e-04 & -0.074 & 0.9417  & \\
+\end{tabular}
+\end{table}
+Table 1 shows the summary fiting results of our baseline model.In table 1, estimated represents the coefficients of variables and z-value indicates the most significant variable which shows color4 is the most importmant predicator in baseline model.
+From the whole perspective, the residual deviance is ,and AIC is 201.2. 
+
+\section{4.model selection}
+Given the baseline model,we select predictiable variables with Akaike Information Criterion(AIC) to find the best model.
+
+AIC is an estimator of out-of-sample prediction error and the relative quality of statistic model.As a means of model selection, it weighs the complexity of the estimated model and the goodness of the fitted data of the model.AIC is defined as follows:
+                            AIC=2k-2ln(L)
+                            
+where k represents the number of parameters and L indicates the maximum likelihood of model.
+
+Usually,we can apply the model selection in three methods:
+
+forward:The forward selection starts with the minimal model,which includes intercept without variables,then adds the variables until we get the best model which evaluated by AIC.
+
+backward:The backward elimination starts with the maximal model which include all the variables,then delete the variables until we get the best model which evaluated by AIC.
+
+stepwise:The stepwise selection combines the forward and backward method,which starts the intermediate model and add or delete the variables until we find the best model.
+
+With the methon stepAIC in library MASS,we get the 'best' model which just retain the variabel'width',color2','color3'and 'color4'.The AIC of this model is 184.27,which is better than our baseline model:197.46.
+\begin{table}[]
+\begin{tabular}{ccccccc}
+& Estimate& Std. Error&z value&  Pr(>|z|)& \\ \hline
+ (Intercept)& -11.385 &2.873  &-3.962 & <0.001 &\\ 
+width & 0.468 & 0.106 & -0.152 &0.8803 & 0.001 &\\
+color2 & 0.072 & 0.740 & -0.102 & 0.9195 &   \\
+color3& -0.224 & 0.777 & -0.233 & 0.8176 & \\
+color4& -1.330 & 0.853 & -0.074 & 0.9417  & \\
+\end{tabular}
+\end{table}
+
+\section{5.model assessment}
+##1.model comparison
+Based on the baseline model and selected model shown above, we compare relative parameters to evaluate the two models.
+
+Firstly, the AIC value of baseline model which incorporates all variables is 201.2 and selected model is 197.46,which represent the selected model has better goodness of fit thaan baseline model with the same dataset.
+
+Secondly,the residual deviance indicates the response predicted by a model on adding independent variables.The lower of value, the better.Howereve，the residual deviance of selected model is 187.46 on 168 degrees of freedom;baseline model is 185.20 on 165 degrees of freedom. Both model have the same value of null deviance(only intercept term):225.76 on 172 degrees of freedom.Therefore,the selected model reduces McFadden's pseudo-$$R^2$$from 0.1796 to 0.1697,which did not show a better fit obviously.
+
+2.Multicollinearity
+
+To check for any multicollinearity between variables, we calculate the Variance Inflation Factor(VIF),which measures the effect of a set of explanatory variables on the variance of the coeffcients of another variable.Therefore,in the selected model, there is no obvious linear correlation between width and color. In the baseline model, the width (VIF:3.49)and weight(VIF:3.39) show a linear correlation which also can be reflected by covariance matrix in section 2.
+
+
+3.Likelihood ratio test
+The likelihood ratio test compares the likelihood of the data under the baseline model(with full variables) against the likelihood of the data under a selected model with fewer predictors. Given that null hypothesis holds that the reduced model is true,we get the p-value of 0.5212, which is more than 0.05.Therefore, there is no obvious evidence for us to reject the null hypothesis. 
+
+4.Hosmer-Lemeshow Test
+Hosmer-Lemeshow Test is another way to test goodness of fit.It segment the
+observations into groups according to the their predicted probabilities.The HL test use the pearson chi square test to examine if the true probabilities of events are similar to the predicted probabilities. Given that the null hypothesis holds that the model fits the data,we get the p-value of selected model is 0.8136 and the p-value of baseline model is 0.6016,which s_how us the we have little evidence to reject null hypothesis.
+5.Influential observations
+Considering  some special points which will cause great change in our model fit,we need to do influential observations.
+
+Firstly,we test the outliers of our model,which show there is
+no Studentized residuals with Bonferroni p < 0.05.Then,we calculate the cook's distance to detect the outliers which influenced the model very significantly.The points with cook's distance are greater than $$4/(n-k-2)$$can be regarded as outliers,where n mean the number of observations and k mean the number of variables.Therefore,the point 7,128,171 are regarded as influential outliers,which shown in Figure 4.
+
+
+
+Also,we implement the influential observations by influencePlot,which can show the value of residual deviance,hat statistics and cook distance in table 4.
+\begin{table}[]
+\begin{tabular}{ccccccc}
+& Studres& Hat&CookD\\ \hline
+7 & -1.7137 & 0.0942 & 0.0634  &     \\
+22 & 1.0953 & 0.1232& 0.0.0234  &    \\
+94 & -2.1407 & 0.0142 & 0.0243  &  \\
+128 & 2.2098 & 0.0324 & 0.0616  & \\
+131 & 1.2029 & 0.1307 & 0.0319  &  \\
+171 & -2.0392 & 0.0659 & 0.0841  &  \\
+\end{tabular}
+\end{table}
+
+
+6.cross validation
+To validate the model is not overfiting,we use the 10-fold cross validation with the same model architecture of selected model.Because there is no test data set at first,so we use the 10-fold cross validation to find the optimal split of training dataset and test dataset.With the fixed seed we find the optimal training set which give the test accuracy 0.8823.Therefore,we use this training dataset to do logistic regression again and get the coefficients as following:
+\begin{table}[]
+\begin{tabular}{ccccccc}
+& Estimate& Std. Error&z value&  Pr(>|z|)& \\ \hline
+ (Intercept)& -11.385 &2.873  &-3.962 & <0.001 &\\ 
+width & 0.468 & 0.106 & -0.152 &0.8803 & 0.001 &\\
+color2 & 0.072 & 0.740 & -0.102 & 0.9195 &   \\
+color3& -0.224 & 0.777 & -0.233 & 0.8176 & \\
+color4& -1.330 & 0.853 & -0.074 & 0.9417  & \\
+\end{tabular}
+\end{table}
+
+Then we plot the Receiver Operating Characteristic(ROC) curve to evaluate the performance of our model,In the test dataset, the value of Area Under the Curve(AUC) is  and the value of Area Under the Curve(AUC) in whole dataset(without influential outliers) is 0.794.The figure 5 shows below is the ROC curve in the whole dataset with the coefficients from optimal training dataset choosed by cross-validation.
+
+
+\section{6.Conclusion and discussion}
+In this project,we use a logistc regression model to detect whether a female crab has satellites.Finally,we get the logistic regression model as following:
+
+This model show the accuracy
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

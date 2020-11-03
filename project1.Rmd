@@ -1,0 +1,220 @@
+---
+title: "Linear Regression of Airline Data"
+author: "Yueran Liang, Xiaoqi Ma, Siyuan Li, Zhuoyue Wang"
+date: "2020/3/7"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+geometry: margin = 2.5cm
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1.Introduction
+In order to evaluate the effects of different factors on airline costs, we did a linear regression analysis to seek for variables which have significant correlation with total operating cost.
+
+
+There are 11 columns in Dataset we need to consider for 30 companies:
+
+>* airline: name of airline company samples.
+
+>* Length: Length of flight[miles]
+
+>* Speed: Speed of Plane[miles per hour]
+
+>* DailyTime: Daily Flight Time per plane
+
+>* Population: Population served
+
+>* LoadFactor: Ton-Mile load factor
+
+>* Capacity: Available Capacity
+
+>* TotalAssets: Total Assets,we do not use this column because it is linearly correated with Adjusted Assets.
+
+>* Investments and Special Funds: we do not use this column.
+
+>* NetAssets: firm net assets,represent the adjust assets in the dataset. 
+
+>* Revenue Tons per Aircraft mile: we do not use this column
+
+>* OperatingCost: Total operating cost,lable of problem and we fit the data to predict this value.
+
+## 2.Exploratory Data Analysis
+We explore the dataset to discover the relationships between variables. Firstly, we ploted the pairwise scatterplots for each pair of variable. However, we found that there are outliers in the plots of **OperatingCost** and the other variables. Therefore, a boxplot is plotted as in Figure1 to detect the outliters in the **OperatingCost**.
+
+```{r fig1, fig.width=5, fig.height=10,fig.align = "center",fig.cap="\\label{fig:figs}boxplot of OperatingCost to find outliers",echo=FALSE}
+library(png)
+library(grid)
+img <- readPNG("./boxplot.png")
+grid.raster(img)
+```
+
+We replaced the outliers with the median, a robust statistic. After that , we plot the new scatterplots as shown in Figure2. The last row implies the relationship between **OperatingCost** and other variables, which is somehow noteworthy and can deduce some relationships from the observations in the followings:
+
+1. Both the plots of **OperatingCost** verus **DailyTime** and **LoadFactor** shows linear relationships between **OperatingCost** and the other two variables. In particular, it is strongly linear related with **LoadFactor**, while the linearity is much slighter between **OperatingCost** and **DailyTime**.
+
+2. In the plots of **OperatingCost** verus **Length**, **Speed**, **Population**, **Capacity** and **NetAssets**, the randomness of points indicates the poor correaltion between **OperatingCost** and other 5 variables.
+In addition to these pheonomenons, we can also observe that there is obvious linear relationship among **Length**, **Speed** and **Capacity**. It may imply that we can remove two of these three variables while doing the model selection afterwards.
+
+
+
+```{r fig2,fig.width=20,fig.height = 25,fig.align = "center",fig.cap="\\label{fig:figs}Variables pairwise scatterplot",echo=FALSE}
+load("./AirData.Rdata")
+pairs(data[,2:9], pch = 21)
+```
+
+## 3.Regression model.
+You can also embed plots, for example:
+Considering the influencing seven factors, we fit the model as following:
+
+OperatingCost ~ Length + Speed + DailyTime + Population + LoadFactor + Capacity + NetAssets
+
+```{r,echo=FALSE,results='hide'}
+data=read.csv(file="./data.csv",header=T,sep=',')
+airline.fit=lm(OperatingCost ~ Length + Speed + DailyTime + Population + LoadFactor + Capacity + NetAssets,data)
+summary(airline.fit)
+```
+
+With regression analysis, estimated correlation, Std. Error, t value and value of Pr(>|t|) are shown below:
+
+\begin{table}[h]
+\centering
+\caption{Regression Results}
+\label{tab:table1}
+\begin{tabular}{ccccccc}
+& Estimate& Std. Error&t value&  Pr(>|t|)& \\ \hline
+ (Intercept)& 1.689e+02 & 7.034e+01 &2.401 & 0.0249 &\\ 
+Length & -5.449e-02 & 2.929e-01 & -0.186&   0.8540   &     \\
+Speed  & -6.127e-02 & 6.563e-01 & -0.093 & 0.9264 &   \\
+DailyTime& -1.043e+00 & 4.896e+00 & -0.213 & 0.8332 & \\
+Population& -7.668e-05  & 9.132e-04 & -0.084 & 0.9338  & \\
+LoadFactor&-9.208e+01 & 7.261e+01 & -1.268 &  0.2175 &\\
+Capacity &-6.016e+00 & 9.775e+00 & -0.615 & 0.5443 &\\
+NetAssets& 5.181e-03 & 4.460e-02 & 0.116 &  0.9085  \\
+\end{tabular}
+\end{table}
+
+The summary of regression anlysis indicates that LoadFactor, Available Capacity and Daily Flight Time per plane have significant correlation with total operatoring cost. However, these three factors do not show significantly strong evidence to against null hypothesis according to the p-value in Table1. Therefore, we need to do more for model selection.
+
+```{r,echo=FALSE,results='hide'}
+#par(mfrow=c(2,2))
+#plot(airline.fit)
+```
+
+## 4.Model Selection
+We compare different regression models and try to select a  model that better fits the target and has fewer predictive factors. We use Akaike Information Criterion (**AIC**) as the criterion and follow three different model selection pipeline: **forward**, **backward** and **stepwise selection**. For all selection methods, we set the scope to be from 0 to all variables. Especially, for stepwise selection, we start with the three most important variables we observed in previous section: 
+Loadfactor, Capacity and DailyTime.
+
+* **forward selection**: Start with 0 variable, add the variable with smallest **AIC** value iteratively.
+* **backward elimination**: Start with all variables, delete the variable with largest **AIC**.
+* **stepwise selection**: Start with Loadfactor, Capacity and DailyTime, and use the backward elimination and forward selection to delete or add variable iteratively.
+
+
+The three selection methods yield to the same model with **AIC** 203.53:
+\begin{equation*}
+Y = 161.178 - 109.575x_1 - 8.358x_2
+\end{equation*}
+where $Y$ is **OperatingCost**, $x_1$ and $x_2$ denotes **LoadFactor** and **Capacity** respectively.
+The adjusted $R^2$ is 0.5143, F-statistic is 16.88 on 2 and 28 degree of freedom and p-value is 1.547e-05
+
+The results of **stepwise selection** is showed in Table 2.
+
+\begin{table}[h]
+\caption{Stepwise Selection Results}
+\label{tab:table2}
+\centering
+\begin{tabular}{ccccccc}
+& Estimate& Std. Error&t value&  Pr(>|t|)& \\ \hline
+ (Intercept)& 161.178  & 16.753 & 9.621 & 2.24e-10 &\\ 
+LoadFactor&-109.575  & 46.177& -2.373 &  0.0248 &\\
+Capacity &-8.358 & 3.804 & -2.197  & 0.0365 &\\
+
+\end{tabular}
+\end{table}
+
+
+```{r,echo=FALSE,results = 'hide'}
+FitStart <- lm(OperatingCost ~ 1, data = data)
+FitAll <- lm(OperatingCost ~ Length + Speed + DailyTime + Population + LoadFactor + Capacity + NetAssets, data = data)
+
+FitStepStart <- lm(formula = OperatingCost ~ LoadFactor + Capacity+ DailyTime, data = data)
+lms <- step(FitStepStart, direction = "both")
+```
+
+## 5.Model Assesment
+In order to make the results of our analysis meaningful, we need to check model assumptions: independent observations, normally distributed errors, constant error variance, additive effects. Some indexes have been chosen to assess our regression model.
+
+We use studentized residuals for identifying outliers. Observations which are larger than 2 are considered as outliers. From left plot in Figure 3 three outliers for current model are selected: data point 6, 14, 30.
+
+Another type of samples to examine are high-leverage points. To screen out them we compute cook's distance as shown in the right plot of Figure 3. The screening threshold is set to 4 times of average cook's distance. The Data point 6, 14, 30 are selected again. These three observations are both high-leverage points and ouliers. Thus they are regarded as influential points. 
+
+When we removed influential points and select model again, better performance is achieved as the adjusted $R^2$ is 0.876 and **AIC** is 149.68 with the new model:
+\begin{equation*}
+Y = 236.272 -202.268x_1 - 5.825x_2 -5.067x_3
+\end{equation*}
+where $Y$ is **OperatingCost**, $x_1$ and $x_2$ denotes **LoadFactor**, **Capacity**, **DailyTime** respectively.
+
+
+
+
+```{r,fig3,fig.align = "center",fig.cap="\\label{fig:fig_assess}Diagnostic Plots for Assessment",echo=FALSE}
+library(MASS)
+par(mfrow=c(1,2), pin=c(2.5,1.8))
+studres <- abs(studres(lms))
+plot(studres,type = "h",pch="*", cex=2, main="Studentized Residuals",xlab="Obs. number", ylab="Studentized Residuals")  
+abline(h = 2, col="red")  
+text(x=1:length(studres)+1, y=studres, labels=ifelse(studres>2,names(studres),""), col="red")
+
+cooksd <- cooks.distance(lms)
+th = 8/(length(data[,1])-length(data[1,]))
+plot(cooksd,type = "h", pch="*", cex=2, main="Cook's distance",xlab="Obs. number", ylab="Cook's distance") 
+abline(h = 4*mean(cooksd, na.rm=T), col="red")  
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4*mean(cooksd, na.rm=T),names(cooksd),""), col="red")  # label
+```
+
+```{r,echo=FALSE,results = 'hide'}
+data_d = data[c(-6,-14,-30),]
+```
+
+```{r,echo=FALSE,results = 'hide'}
+FitStepStart_d <- lm(formula = OperatingCost ~ LoadFactor + Capacity+ DailyTime, data = data_d)
+lmsa <- stepAIC(FitStepStart_d, direction = "both")
+summary(lmsa)
+```
+
+```{r,echo=FALSE,results = 'hide',fig.show="hide"}
+library(MASS)
+par(mfrow=c(1,2), pin=c(2.5,1.8))
+studres <- abs(studres(lmsa))
+plot(studres,type = "h",pch="*", cex=2, main="Studentized Residuals",xlab="Obs. number", ylab="Studentized Residuals")  
+abline(h = 2, col="red")  
+text(x=1:length(studres)+1, y=studres, labels=ifelse(studres>2,names(studres),""), col="red")
+
+cooksd_d <- cooks.distance(lmsa)
+th = 8/(length(data_d[,1])-length(data_d[1,]))
+plot(cooksd_d,type = "h", pch="*", cex=2, main="Cook's distance",xlab="Obs. number", ylab="Cook's distance") 
+abline(h = th, col="red")  
+text(x=1:length(cooksd_d)+1, y=cooksd, labels=ifelse(cooksd_d>th,names(cooksd_d),""), col="red")  # label
+```
+
+
+## 6.Conclusion
+
+In this paper, we studied the relation between **Operating Cost** and seven different factors. We identified the most significant and relevant predictors: **LoadFactor**  and **Capacity** from the available data and we present a linear regression model that can predict the **Operating Cost** for airline companies:
+\begin{equation*}
+Y = 161.178 - 109.575x_1 - 8.358x_2
+\end{equation*}
+where $Y$ is **OperatingCost**, $x_1$ and $x_2$ denotes **LoadFactor** and **Capacity** respectively. Furthermore, we analyzed the outliers. There are airline companies that may not be representative for the majorities. We assess our model by screening out influential data points. When we removed these data points and do model selection again a better model is presented as there is a big improvement of $R^2$ and **AIC**. The final model we get is:
+\begin{equation*}
+Y = 236.272 -202.268x_1 - 5.825x_2 -5.067x_3
+\end{equation*}
+where $Y$ is **OperatingCost**, $x_1$ and $x_2$ denotes **LoadFactor**, **Capacity**, **DailyTime** respectively.
+
+
+
+
